@@ -34,7 +34,7 @@ class Config:
                                                 "tfx-tuner-service-account@cloud-training-281409.iam.gserviceaccount.com")
 
         self.PIPELINE_NAME = os.getenv("PIPELINE_NAME", "tfx-titanic-training")
-        self.MODEL_NAME = os.getenv("MODEL_NAME", "covertype_classifier")
+        self.MODEL_NAME = os.getenv("MODEL_NAME", "tfx_titanic-classifier")
         self.DATA_ROOT_URI = os.getenv("DATA_ROOT_URI",
                                        "gs://cloud-training-281409-kubeflowpipelines-default/tfx-template/data/titanic")
         self.TFX_IMAGE = os.getenv("KUBEFLOW_TFX_IMAGE", "tensorflow/tfx:0.25.0")
@@ -59,7 +59,7 @@ class Config:
         self.LOCAL_ARTIFACT_STORE = os.path.join(os.sep, self.HOME, 'artifact-store')
         self.LOCAL_SERVING_MODEL_DIR = os.path.join(os.sep, self.HOME, 'serving_model')
         self.LOCAL_PIPELINE_ROOT = os.path.join(self.LOCAL_ARTIFACT_STORE, self.PIPELINE_NAME, time.strftime("%Y%m%d_%H%M%S"))
-        self.LOCAL_METADATA_PATH = os.path.join(self.LOCAL_PIPELINE_ROOT, 'tfx_metadata', self.PIPELINE_NAME, 'metadata.db')
+        self.LOCAL_METADATA_PATH = os.path.join(self.LOCAL_PIPELINE_ROOT, 'tfx_metadata', 'metadata.db')
 
         self.USE_GS = os.getenv("USE_GS", "False")
         self.USE_AI_PLATFORM = os.getenv("USE_AI_PLATFORM", "False")
