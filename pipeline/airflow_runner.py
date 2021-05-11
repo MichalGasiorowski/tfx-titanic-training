@@ -21,7 +21,7 @@ from __future__ import print_function
 import os
 import shutil
 import time
-from datetime import datetime
+import datetime
 from distutils.util import strtobool
 
 from absl import logging
@@ -73,8 +73,8 @@ class AirflowRunnerWrapper():
         # Airflow-specific configs; these will be passed directly to airflow
         self._airflow_config = {
             'schedule_interval': None,
-            #'start_date': datetime.datetime(2019, 1, 1),
-            'start_date': datetime.now()
+            'start_date': datetime.datetime(2021, 1, 1),
+            #'start_date': datetime.now()
         }
 
     def _setup_pipeline_parameters_from_env(self):
@@ -85,6 +85,7 @@ class AirflowRunnerWrapper():
         # properties applicable for airflow run
         self.HOME = self.env_config.HOME
         self.AIRFLOW_HOME = os.path.join(os.sep, self.HOME, 'airflow')
+        self.AIRFLOW_HOME_DAGS = os.path.join(os.sep, self.AIRFLOW_HOME, 'dags')
 
         self.LOCAL_ARTIFACT_STORE = os.path.join(os.sep, self.AIRFLOW_HOME, 'artifact-store')
         self.LOCAL_SERVING_MODEL_DIR = os.path.join(os.sep, self.AIRFLOW_HOME, 'serving_model')
@@ -94,7 +95,7 @@ class AirflowRunnerWrapper():
         self.LOCAL_PIPELINE_ROOT = os.path.join(self.LOCAL_ARTIFACT_STORE, 'pipelines', self.PIPELINE_NAME)
         self.LOCAL_METADATA_PATH = os.path.join(self.LOCAL_PIPELINE_ROOT, 'tfx_metadata', 'metadata.db')
 
-        self.DATA_ROOT_URI = os.path.join(os.sep, self.AIRFLOW_HOME, 'data', 'train')
+        self.DATA_ROOT_URI = os.path.join(os.sep, self.AIRFLOW_HOME_DAGS, 'data', 'train')
 
         self.BEAM_PIPELINE_ARGS = [
             '--direct_running_mode=multi_processing',
@@ -133,6 +134,7 @@ class AirflowRunnerWrapper():
                 pusher_config=self.pusherConfig,
                 runtime_parameters_config=None,
                 enable_cache=self.ENABLE_CACHE,
+                code_folder = self.AIRFLOW_HOME_DAGS,
                 local_run=True,
                 beam_pipeline_args=self.BEAM_PIPELINE_ARGS,
                 metadata_connection_config=metadata.sqlite_metadata_connection_config(
@@ -142,7 +144,7 @@ class AirflowRunnerWrapper():
         # clear local log folder
         logging.info('Cleaning local log folder : %s' % self.LOCAL_LOG_DIR)
         os.makedirs(self.LOCAL_LOG_DIR, exist_ok=True)
-        self.remove_folders(self.LOCAL_LOG_DIR)
+        #self.remove_folders(self.LOCAL_LOG_DIR)
 
         """Define an airflow pipeline and run it."""
 

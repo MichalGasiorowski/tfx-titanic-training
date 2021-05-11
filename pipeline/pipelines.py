@@ -17,6 +17,7 @@ from __future__ import absolute_import
 
 from typing import Any, Dict, List, Optional, Text
 
+import os
 import absl
 import tensorflow_model_analysis as tfma
 from ml_metadata.proto import metadata_store_pb2
@@ -68,6 +69,7 @@ def create_pipeline(pipeline_name: Text,
                     local_run: bool = False,
                     beam_pipeline_args: Optional[List[Text]] = None,
                     enable_cache: Optional[bool] = True,
+                    code_folder = '.',
                     metadata_connection_config: Optional[metadata_store_pb2.ConnectionConfig] = None
                     ) -> pipeline.Pipeline:
     """Trains and deploys the Keras Titanic Classifier with TFX and Kubeflow Pipeline on Google Cloud.
@@ -97,11 +99,24 @@ def create_pipeline(pipeline_name: Text,
     A TFX pipeline object.
   """
 
+    absl.logging.info('pipeline_name: %s' % pipeline_name)
+    absl.logging.info('pipeline root: %s' % pipeline_root)
+    absl.logging.info('data_root_uri for training: %s' % data_root_uri)
+
     absl.logging.info('train_steps for training: %s' % trainer_config.train_steps)
     absl.logging.info('tuner_steps for tuning: %s' % tuner_config.tuner_steps)
-
-    absl.logging.info('data_root_uri for training: %s' % data_root_uri)
     absl.logging.info('eval_steps for evaluating: %s' % trainer_config.eval_steps)
+
+    absl.logging.info('os default list dir: %s' % os.listdir('.'))
+
+    schema_proper_folder = os.path.join(os.sep, code_folder, SCHEMA_FOLDER)
+    absl.logging.info('schema_proper_folder: %s' % schema_proper_folder)
+
+    preprocessing_proper_file = os.path.join(os.sep, code_folder, TRANSFORM_MODULE_FILE)
+    absl.logging.info('preprocessing_proper_file: %s' % preprocessing_proper_file)
+
+    model_proper_file = os.path.join(os.sep, code_folder, TRAIN_MODULE_FILE)
+    absl.logging.info('model_proper_file: %s' % model_proper_file)
 
     # Brings data into the pipeline and splits the data into training and eval splits
     output_config = example_gen_pb2.Output(
@@ -133,7 +148,7 @@ def create_pipeline(pipeline_name: Text,
     # Import a user-provided schema
     import_schema = ImporterNode(
         instance_name='import_user_schema',
-        source_uri=SCHEMA_FOLDER,
+        source_uri=schema_proper_folder,
         artifact_type=Schema)
 
     # Performs anomaly detection based on statistics and data schema.
@@ -145,7 +160,7 @@ def create_pipeline(pipeline_name: Text,
     transform = Transform(
         examples=examplegen.outputs.examples,
         schema=import_schema.outputs.result,
-        module_file=TRANSFORM_MODULE_FILE)
+        module_file=preprocessing_proper_file)
 
     # Tunes the hyperparameters for model training based on user-provided Python
     # function. Note that once the hyperparameters are tuned, you can drop the
@@ -168,7 +183,7 @@ def create_pipeline(pipeline_name: Text,
 
     if tuner_config.enable_tuning:
         tuner_args = {
-            'module_file': TRAIN_MODULE_FILE,
+            'module_file': model_proper_file,
             'examples': transform.outputs.transformed_examples,
             'transform_graph': transform.outputs.transform_graph,
             'train_args': {'num_steps': tuner_steps},
@@ -193,7 +208,7 @@ def create_pipeline(pipeline_name: Text,
     # Trains the model using a user provided trainer function.
 
     trainer_args = {
-        'module_file': TRAIN_MODULE_FILE,
+        'module_file': model_proper_file,
         'transformed_examples': transform.outputs.transformed_examples,
         'schema': import_schema.outputs.result,
         'transform_graph': transform.outputs.transform_graph,
