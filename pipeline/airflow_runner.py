@@ -26,6 +26,7 @@ from distutils.util import strtobool
 
 from absl import logging
 from tfx.orchestration import metadata
+from tfx.orchestration import data_types
 from tfx.orchestration.airflow.airflow_dag_runner import AirflowDagRunner
 from tfx.orchestration.airflow.airflow_dag_runner import AirflowPipelineConfig
 
@@ -33,6 +34,7 @@ from config import Config
 from pipeline_args import TrainerConfig
 from pipeline_args import TunerConfig
 from pipeline_args import PusherConfig
+from pipeline_args import RuntimeParametersConfig
 
 import pipelines as pipeline
 
@@ -74,7 +76,7 @@ class AirflowRunnerWrapper():
         self._airflow_config = {
             'schedule_interval': None,
             'start_date': datetime.datetime(2021, 1, 1),
-            #'start_date': datetime.now()
+            # 'start_date': datetime.now()
         }
 
     def _setup_pipeline_parameters_from_env(self):
@@ -89,8 +91,6 @@ class AirflowRunnerWrapper():
 
         self.LOCAL_ARTIFACT_STORE = os.path.join(os.sep, self.AIRFLOW_HOME, 'artifact-store')
         self.LOCAL_SERVING_MODEL_DIR = os.path.join(os.sep, self.AIRFLOW_HOME, 'serving_model')
-        #self.LOCAL_PIPELINE_ROOT = os.path.join(self.LOCAL_ARTIFACT_STORE, self.PIPELINE_NAME,
-        #                                        time.strftime("%Y%m%d_%H%M%S"))
 
         self.LOCAL_PIPELINE_ROOT = os.path.join(self.LOCAL_ARTIFACT_STORE, 'pipelines', self.PIPELINE_NAME)
         self.LOCAL_METADATA_PATH = os.path.join(self.LOCAL_PIPELINE_ROOT, 'tfx_metadata', 'metadata.db')
@@ -102,13 +102,30 @@ class AirflowRunnerWrapper():
             # 0 means auto-detect based on on the number of CPUs available
             # during execution time.
             '--direct_num_workers=0',
-            #'--temp_location=' + self.BEAM_TMP_FOLDER,
+            # '--temp_location=' + self.BEAM_TMP_FOLDER,
         ]
 
         self.trainerConfig = TrainerConfig.from_config(config=self.env_config, ai_platform_training_args=None)
         self.tunerConfig = TunerConfig.from_config(config=self.env_config, ai_platform_tuner_args=None)
-        self.pusherConfig = PusherConfig.from_config(config=self.env_config,  serving_model_dir=self.LOCAL_SERVING_MODEL_DIR,
+        self.pusherConfig = PusherConfig.from_config(config=self.env_config,
+                                                     serving_model_dir=self.LOCAL_SERVING_MODEL_DIR,
                                                      ai_platform_serving_args=None)
+
+        data_root_runtime = data_types.RuntimeParameter(
+            'data_root', ptype=str, default=self.DATA_ROOT_URI
+        )
+        train_steps_runtime = data_types.RuntimeParameter(
+            name='train-steps', ptype=int, default=int(self.trainerConfig.train_steps)
+        )
+        eval_steps_runtime = data_types.RuntimeParameter(
+            name='eval-steps',
+            default=int(self.trainerConfig.eval_steps),
+            ptype=int
+        )
+
+        self.runtime_parameters_config = RuntimeParametersConfig(data_root_runtime=data_root_runtime,
+                                                                 train_steps_runtime=train_steps_runtime,
+                                                                 eval_steps_runtime=eval_steps_runtime)
 
     def create_pipeline_root_folders_paths(self):
         os.makedirs(self.LOCAL_PIPELINE_ROOT, exist_ok=True)
@@ -126,25 +143,25 @@ class AirflowRunnerWrapper():
 
     def _create_pipeline(self):
         return pipeline.create_pipeline(
-                pipeline_name=self.PIPELINE_NAME,
-                pipeline_root=self.LOCAL_PIPELINE_ROOT,
-                data_root_uri=self.DATA_ROOT_URI,
-                trainer_config=self.trainerConfig,
-                tuner_config=self.tunerConfig,
-                pusher_config=self.pusherConfig,
-                runtime_parameters_config=None,
-                enable_cache=self.ENABLE_CACHE,
-                code_folder = self.AIRFLOW_HOME_DAGS,
-                local_run=True,
-                beam_pipeline_args=self.BEAM_PIPELINE_ARGS,
-                metadata_connection_config=metadata.sqlite_metadata_connection_config(
-                    self.LOCAL_METADATA_PATH))
+            pipeline_name=self.PIPELINE_NAME,
+            pipeline_root=self.LOCAL_PIPELINE_ROOT,
+            data_root_uri=self.DATA_ROOT_URI,
+            trainer_config=self.trainerConfig,
+            tuner_config=self.tunerConfig,
+            pusher_config=self.pusherConfig,
+            runtime_parameters_config=self.runtime_parameters_config,
+            enable_cache=self.ENABLE_CACHE,
+            code_folder=self.AIRFLOW_HOME_DAGS,
+            local_run=True,
+            beam_pipeline_args=self.BEAM_PIPELINE_ARGS,
+            metadata_connection_config=metadata.sqlite_metadata_connection_config(
+                self.LOCAL_METADATA_PATH))
 
     def run(self):
         # clear local log folder
         logging.info('Cleaning local log folder : %s' % self.LOCAL_LOG_DIR)
         os.makedirs(self.LOCAL_LOG_DIR, exist_ok=True)
-        #self.remove_folders(self.LOCAL_LOG_DIR)
+        # self.remove_folders(self.LOCAL_LOG_DIR)
 
         """Define an airflow pipeline and run it."""
 
@@ -153,7 +170,7 @@ class AirflowRunnerWrapper():
         return self
 
 
-#if __name__ == '__main__':
+# if __name__ == '__main__':
 #    logging.set_verbosity(logging.INFO)
 #    airflowRunnerWrapper = AirflowRunnerWrapper()
 #    airflowRunnerWrapper.create_pipeline_root_folders_paths()

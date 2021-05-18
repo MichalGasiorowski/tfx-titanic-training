@@ -43,7 +43,8 @@ class Config:
         self.USE_KFP_SA = os.getenv("USE_KFP_SA", "False")
 
         self.ENABLE_TUNING = os.getenv("ENABLE_TUNING", "True")
-        self.TUNER_STEPS = os.getenv("TUNER_STEPS", "2000")
+        self.TUNER_STEPS = os.getenv("TUNER_STEPS", "1000")
+        self.EVAL_TUNER_STEPS = os.getenv("EVAL_TUNER_STEPS", "20")
         self.MAX_TRIALS = os.getenv("MAX_TRIALS", "30")
 
         self.ENABLE_CACHE = os.getenv("ENABLE_CACHE", "False")

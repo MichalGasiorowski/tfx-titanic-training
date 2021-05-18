@@ -26,17 +26,19 @@ class TrainerConfig:
 
 class TunerConfig:
 
-    def __init__(self, enable_tuning: bool, tuner_steps: int, max_trials: int,
+    def __init__(self, enable_tuning: bool, tuner_steps: int, eval_tuner_steps: int, max_trials: int,
                  ai_platform_tuner_args: Optional[Dict[Text, Text]] = None
                  ):
         self.enable_tuning = enable_tuning
         self.tuner_steps = tuner_steps
+        self.eval_tuner_steps = eval_tuner_steps
         self.max_trials = max_trials
         self.ai_platform_tuner_args = ai_platform_tuner_args
 
     @classmethod
     def from_config(cls, config: Config, ai_platform_tuner_args: Optional[Dict[Text, Text]] = None):
         return cls(enable_tuning=strtobool(config.ENABLE_TUNING), tuner_steps=int(config.TUNER_STEPS),
+                   eval_tuner_steps=int(config.EVAL_TUNER_STEPS),
                    max_trials=int(config.MAX_TRIALS), ai_platform_tuner_args=ai_platform_tuner_args)
 
 
@@ -54,36 +56,26 @@ class PusherConfig:
 
 
 class RuntimeParametersConfig:
-    def __init__(self, data_root_uri: data_types.RuntimeParameter, train_steps: data_types.RuntimeParameter,
-                 tuner_steps: data_types.RuntimeParameter, eval_steps: data_types.RuntimeParameter):
-        self.data_root_uri = data_root_uri
-        self.train_steps = train_steps
-        self.tuner_steps = tuner_steps
-        self.eval_steps = eval_steps
+    def __init__(self, data_root_runtime: data_types.RuntimeParameter, train_steps_runtime: data_types.RuntimeParameter,
+                 eval_steps_runtime: data_types.RuntimeParameter):
+
+        self.data_root_runtime = data_root_runtime
+        self.train_steps_runtime = train_steps_runtime
+        self.eval_steps_runtime = eval_steps_runtime
 
     @classmethod
     def from_config(cls, config: Config):
-        data_root_uri = data_types.RuntimeParameter(
-            name='data-root-uri',
-            default=config.DATA_ROOT_URI,
-            ptype=Text
+        data_root_runtime = data_types.RuntimeParameter(
+            'data_root', ptype=str, default=config.DATA_ROOT_URI
         )
-
-        train_steps = data_types.RuntimeParameter(
-            name='train-steps',
-            default=int(config.TRAIN_STEPS),
-            ptype=int
+        train_steps_runtime = data_types.RuntimeParameter(
+            name='train-steps', ptype=int, default=int(config.TRAIN_STEPS)
         )
-
-        tuner_steps = data_types.RuntimeParameter(
-            name='tuner-steps',
-            default=int(config.TUNER_STEPS),
-            ptype=int
-        )
-
-        eval_steps = data_types.RuntimeParameter(
+        eval_steps_runtime = data_types.RuntimeParameter(
             name='eval-steps',
             default=int(config.EVAL_STEPS),
             ptype=int
         )
-        return cls(data_root_uri=data_root_uri, train_steps=train_steps, tuner_steps=tuner_steps, eval_steps=eval_steps)
+
+        return cls(data_root_runtime=data_root_runtime, train_steps_runtime=train_steps_runtime,
+                   eval_steps_runtime=eval_steps_runtime)

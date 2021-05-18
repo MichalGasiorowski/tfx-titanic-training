@@ -27,7 +27,7 @@ from tfx.components import ExampleValidator
 from tfx.components import ImporterNode
 from tfx.components import InfraValidator
 from tfx.components import Pusher
-from tfx.components import ResolverNode
+from tfx.dsl.components.common.resolver import Resolver
 from tfx.components import SchemaGen
 from tfx.components import StatisticsGen
 from tfx.components import Trainer
@@ -66,6 +66,7 @@ def create_pipeline(pipeline_name: Text,
                     tuner_config: TunerConfig,
                     pusher_config: PusherConfig,
                     runtime_parameters_config: RuntimeParametersConfig = None,
+                    runtime_parameters_supported = False,
                     local_run: bool = False,
                     beam_pipeline_args: Optional[List[Text]] = None,
                     enable_cache: Optional[bool] = True,
@@ -125,16 +126,13 @@ def create_pipeline(pipeline_name: Text,
             example_gen_pb2.SplitConfig.Split(name='eval', hash_buckets=1)
         ]))
 
-    data_root_uri = runtime_parameters_config.data_root_uri \
+    # examples = external_input(data_root_uri)
+
+    data_root_uri = runtime_parameters_config.data_root_runtime \
         if runtime_parameters_config is not None \
         else data_root_uri
 
-    # examples = external_input(data_root_uri)
     examplegen = CsvExampleGen(input_base=data_root_uri, output_config=output_config)
-
-    # example_gen = tfx.components.CsvExampleGen(
-    #    input_base=DATA_ROOT,
-    #    output_config=output_config)
 
     # examplegen = CsvExampleGen(input_base=data_root_uri)
 
@@ -171,23 +169,20 @@ def create_pipeline(pipeline_name: Text,
         source_uri='hyperparameters',
         artifact_type=HyperParameters)
 
-    train_steps = runtime_parameters_config.train_steps \
+    train_steps = runtime_parameters_config.train_steps_runtime \
         if runtime_parameters_config is not None \
         else trainer_config.train_steps
-    eval_steps = runtime_parameters_config.eval_steps \
+    eval_steps = runtime_parameters_config.eval_steps_runtime \
         if runtime_parameters_config is not None \
         else trainer_config.eval_steps
-    tuner_steps = runtime_parameters_config.tuner_steps \
-        if runtime_parameters_config is not None \
-        else tuner_config.tuner_steps
 
     if tuner_config.enable_tuning:
         tuner_args = {
             'module_file': model_proper_file,
             'examples': transform.outputs.transformed_examples,
             'transform_graph': transform.outputs.transform_graph,
-            'train_args': {'num_steps': tuner_steps},
-            'eval_args': {'num_steps': eval_steps},
+            'train_args': {'num_steps': tuner_config.tuner_steps},
+            'eval_args': {'num_steps': tuner_config.eval_tuner_steps},
             'custom_config': {'max_trials': tuner_config.max_trials}
             # 'tune_args': tuner_pb2.TuneArgs(num_parallel_trials=3),
         }
@@ -212,6 +207,7 @@ def create_pipeline(pipeline_name: Text,
         'transformed_examples': transform.outputs.transformed_examples,
         'schema': import_schema.outputs.result,
         'transform_graph': transform.outputs.transform_graph,
+        # train_args={'num_steps': train_steps},
         'train_args': {'num_steps': train_steps},
         'eval_args': {'num_steps': eval_steps},
         #'hyperparameters': tuner.outputs.best_hyperparameters if tunerConfig.enable_tuning else None,
@@ -242,9 +238,11 @@ def create_pipeline(pipeline_name: Text,
     trainer = Trainer(**trainer_args)
 
     # Get the latest blessed model for model validation.
-    resolver = ResolverNode(
+
+    resolver = Resolver(
         instance_name='latest_blessed_model_resolver',
-        resolver_class=latest_blessed_model_resolver.LatestBlessedModelResolver,
+        strategy_class=latest_blessed_model_resolver.LatestBlessedModelResolver,
+        #resolver_class=latest_blessed_model_resolver.LatestBlessedModelResolver, # deprecated
         model=Channel(type=Model),
         model_blessing=Channel(type=ModelBlessing))
 
