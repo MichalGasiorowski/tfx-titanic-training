@@ -30,6 +30,8 @@ tensorflow-serving-api==2.3.0
 tensorflow-transform==0.25.0
 tfx-bsl==0.25.0
 tfx==0.25.0
+tensorflow-cloud
+tensorboard
 kfp==1.0.4
 EOF
 

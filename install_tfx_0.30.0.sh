@@ -29,6 +29,7 @@ tensorflow-model-analysis==0.29.0
 tensorflow-serving-api==2.4.0
 tensorflow-transform==0.29.0
 tfx-bsl==0.29.0
+tensorflow-cloud
 tensorboard
 kfp==1.4.0
 EOF
