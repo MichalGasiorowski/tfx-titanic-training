@@ -24,10 +24,13 @@ from ml_metadata.proto import metadata_store_pb2
 from tfx.components import CsvExampleGen
 from tfx.components import Evaluator
 from tfx.components import ExampleValidator
-from tfx.components import ImporterNode
+from tfx.dsl.components.common.importer import Importer
 from tfx.components import InfraValidator
 from tfx.components import Pusher
-from tfx.dsl.components.common.resolver import Resolver
+
+from tfx.dsl.components.common import resolver
+from tfx.dsl.experimental import latest_blessed_model_resolver
+
 from tfx.components import SchemaGen
 from tfx.components import StatisticsGen
 from tfx.components import Trainer
@@ -35,7 +38,7 @@ from tfx.components import Transform
 from tfx.components import Tuner
 from tfx.components.trainer import executor as trainer_executor
 from tfx.dsl.components.base import executor_spec
-from tfx.dsl.experimental import latest_blessed_model_resolver
+
 from tfx.extensions.google_cloud_ai_platform.pusher import executor as ai_platform_pusher_executor
 from tfx.extensions.google_cloud_ai_platform.trainer import executor as ai_platform_trainer_executor
 from tfx.orchestration import pipeline
@@ -54,6 +57,7 @@ from pipeline_args import TunerConfig
 from pipeline_args import PusherConfig
 from pipeline_args import RuntimeParametersConfig
 
+HYPERPARAMETERS_FOLDER = 'hyperparameters'
 SCHEMA_FOLDER = 'schema'
 TRANSFORM_MODULE_FILE = 'preprocessing.py'
 TRAIN_MODULE_FILE = 'model.py'
@@ -67,7 +71,7 @@ def create_pipeline(pipeline_name: Text,
                     pusher_config: PusherConfig,
                     runtime_parameters_config: RuntimeParametersConfig = None,
                     runtime_parameters_supported = False,
-                    local_run: bool = False,
+                    local_run: bool = True,
                     beam_pipeline_args: Optional[List[Text]] = None,
                     enable_cache: Optional[bool] = True,
                     code_folder = '.',
@@ -119,6 +123,9 @@ def create_pipeline(pipeline_name: Text,
     model_proper_file = os.path.join(os.sep, code_folder, TRAIN_MODULE_FILE)
     absl.logging.info('model_proper_file: %s' % model_proper_file)
 
+    hyperparameters_proper_folder = os.path.join(os.sep, code_folder, HYPERPARAMETERS_FOLDER)
+    absl.logging.info('hyperparameters_proper_folder: %s' % hyperparameters_proper_folder)
+
     # Brings data into the pipeline and splits the data into training and eval splits
     output_config = example_gen_pb2.Output(
         split_config=example_gen_pb2.SplitConfig(splits=[
@@ -144,10 +151,9 @@ def create_pipeline(pipeline_name: Text,
     schemagen = SchemaGen(statistics=statisticsgen.outputs.statistics)
 
     # Import a user-provided schema
-    import_schema = ImporterNode(
-        instance_name='import_user_schema',
+    import_schema = Importer(
         source_uri=schema_proper_folder,
-        artifact_type=Schema)
+        artifact_type=Schema).with_id('import_user_schema')
 
     # Performs anomaly detection based on statistics and data schema.
     examplevalidator = ExampleValidator(
@@ -164,10 +170,9 @@ def create_pipeline(pipeline_name: Text,
     # function. Note that once the hyperparameters are tuned, you can drop the
     # Tuner component from pipeline and feed Trainer with tuned hyperparameters.
 
-    hparams_importer = ImporterNode(
-        instance_name='import_hparams',
-        source_uri='hyperparameters',
-        artifact_type=HyperParameters)
+    hparams_importer = Importer(
+        source_uri=hyperparameters_proper_folder,
+        artifact_type=HyperParameters).with_id('import_hparams')
 
     train_steps = runtime_parameters_config.train_steps_runtime \
         if runtime_parameters_config is not None \
@@ -183,7 +188,7 @@ def create_pipeline(pipeline_name: Text,
             'transform_graph': transform.outputs.transform_graph,
             'train_args': {'num_steps': tuner_config.tuner_steps},
             'eval_args': {'num_steps': tuner_config.eval_tuner_steps},
-            'custom_config': {'max_trials': tuner_config.max_trials}
+            'custom_config': {'max_trials': tuner_config.max_trials, 'is_local_run': local_run}
             # 'tune_args': tuner_pb2.TuneArgs(num_parallel_trials=3),
         }
 
@@ -239,12 +244,12 @@ def create_pipeline(pipeline_name: Text,
 
     # Get the latest blessed model for model validation.
 
-    resolver = Resolver(
-        instance_name='latest_blessed_model_resolver',
+    model_resolver = resolver.Resolver(
+        #instance_name='latest_blessed_model_resolver', # instance_name is deprecated, use with_id()
         strategy_class=latest_blessed_model_resolver.LatestBlessedModelResolver,
-        #resolver_class=latest_blessed_model_resolver.LatestBlessedModelResolver, # deprecated
         model=Channel(type=Model),
-        model_blessing=Channel(type=ModelBlessing))
+        model_blessing=Channel(type=ModelBlessing)\
+        ).with_id('latest_blessed_model_resolver')
 
     # Uses TFMA to compute a evaluation statistics over features of a model.
     accuracy_threshold = tfma.MetricThreshold(
@@ -275,7 +280,7 @@ def create_pipeline(pipeline_name: Text,
     evaluator = Evaluator(
         examples=examplegen.outputs.examples,
         model=trainer.outputs.model,
-        baseline_model=resolver.outputs.model,
+        baseline_model=model_resolver.outputs.model,
         eval_config=eval_config
     )
 
@@ -349,7 +354,7 @@ def create_pipeline(pipeline_name: Text,
         examplevalidator,
         transform,
         trainer,
-        resolver,
+        model_resolver,
         evaluator,
         infravalidator,
         pusher

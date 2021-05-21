@@ -71,11 +71,12 @@ class LocalRunnerWrapper():
     def _setup_pipeline_parameters_from_env(self):
         self.LOCAL_LOG_DIR = self.env_config.LOCAL_LOG_DIR
         self.PIPELINE_NAME = self.env_config.PIPELINE_NAME
-        self.ENABLE_CACHE = self.env_config.ENABLE_CACHE
+        self.ENABLE_CACHE = (bool)(self.env_config.ENABLE_CACHE)
         self.DATA_ROOT_URI = self.env_config.DATA_ROOT_URI
 
         # properties applicable for local run
         self.HOME = self.env_config.HOME
+        self.code_folder = os.path.dirname(__file__)
         self.LOCAL_ARTIFACT_STORE = self.env_config.LOCAL_ARTIFACT_STORE
         self.LOCAL_SERVING_MODEL_DIR = self.env_config.LOCAL_SERVING_MODEL_DIR
         self.LOCAL_PIPELINE_ROOT = self.env_config.LOCAL_PIPELINE_ROOT
@@ -118,6 +119,7 @@ class LocalRunnerWrapper():
                 pusher_config=self.pusherConfig,
                 runtime_parameters_config=None,
                 enable_cache=self.ENABLE_CACHE,
+                code_folder=self.code_folder,
                 local_run=True,
                 metadata_connection_config=metadata.sqlite_metadata_connection_config(
                     self.LOCAL_METADATA_PATH)))

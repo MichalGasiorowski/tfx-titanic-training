@@ -19,11 +19,10 @@ that this pipeline is based upon: https://github.com/tensorflow/tfx/blob/master/
 """
 from __future__ import absolute_import
 
-
 import functools
 import absl
 import os
-from typing import List, Text
+from typing import List, Text, Union
 
 import tensorflow as tf
 import tensorflow_model_analysis as tfma
@@ -72,7 +71,6 @@ def _get_serve_tf_examples_fn(model, tf_transform_output):
         return model(transformed_features)
 
     return serve_tf_examples_fn
-
 
 def _input_fn(file_pattern: List[Text],
               data_accessor: DataAccessor,
@@ -236,8 +234,9 @@ def tuner_fn(fn_args: FnArgs) -> TunerFnResult:
                       model , e.g., the training and validation dataset. Required
                       args depend on the above tuner's implementation.
     """
+    custom_config_dict = _get_custom_config_dict(fn_args)
 
-    max_trials = fn_args.custom_config.get('max_trials', MAX_TRIALS)
+    max_trials = custom_config_dict.get('max_trials', MAX_TRIALS)
 
     transform_graph = tft.TFTransformOutput(fn_args.transform_graph_path)
 
@@ -246,7 +245,8 @@ def tuner_fn(fn_args: FnArgs) -> TunerFnResult:
         _build_keras_model, tf_transform_output=transform_graph)
 
     # CloudTuner is a subclass of kerastuner.Tuner which inherits from BaseTuner.
-    is_local_run = "custom_config" not in fn_args
+    #is_local_run = "custom_config" not in fn_args.custom_config
+    is_local_run = custom_config_dict.get("is_local_run", True)
     absl.logging.info('is_local_run : %s' % is_local_run)
     if is_local_run:
         tuner = kerastuner.RandomSearch(
@@ -294,17 +294,18 @@ def tuner_fn(fn_args: FnArgs) -> TunerFnResult:
 
 
 
-
 # TFX Trainer will call this function.
-def run_fn(fn_args: TrainerFnArgs):
+def run_fn(fn_args: Union[FnArgs, TrainerFnArgs]):
     """Train the model based on given args.
     Args:
       fn_args: Holds args used to train and tune the model as name/value pairs. See
         https://www.tensorflow.org/tfx/api_docs/python/tfx/components/trainer/fn_args_utils/FnArgs.
     """
-    epochs = fn_args.get('epochs', EPOCHS)
-    train_batch_size = fn_args.get('train_batch_size', TRAIN_BATCH_SIZE)
-    eval_batch_size = fn_args.get('eval_batch_size', EVAL_BATCH_SIZE)
+    custom_config_dict = _get_custom_config_dict(fn_args)
+
+    epochs = custom_config_dict.get('epochs', EPOCHS)
+    train_batch_size = custom_config_dict.get('train_batch_size', TRAIN_BATCH_SIZE)
+    eval_batch_size = custom_config_dict.get('eval_batch_size', EVAL_BATCH_SIZE)
 
     tf_transform_output = tft.TFTransformOutput(fn_args.transform_output)
 
@@ -389,3 +390,15 @@ def _copy_tensorboard_logs(local_path: str, out_path: str):
         folder_path = os.path.dirname(gcs_file)
         tf.io.gfile.makedirs(folder_path)
         tf.io.gfile.copy(local_file, gcs_file, overwrite=True)
+
+def _is_fnArgs_iterable(fn_args):
+    try:
+        some_object_iterator = iter(fn_args)
+    except TypeError as te:
+        return False
+    return True
+
+# in tfx0.24 fn_args custom_config can reside directly in fn_args
+def _get_custom_config_dict(fn_args):
+    is_iterable = _is_fnArgs_iterable(fn_args)
+    return fn_args if is_iterable else fn_args.custom_config
