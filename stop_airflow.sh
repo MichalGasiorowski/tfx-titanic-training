@@ -20,6 +20,7 @@ kill -9 $(ps -ef | grep "airflow scheduler" | awk '{print $2}')
 
 echo 'remove pid files for webserver and scheduler'
 rm $AIRFLOW_HOME/airflow-webserver.pid
+rm $AIRFLOW_HOME/airflow-webserver-monitor.pid
 rm $AIRFLOW_HOME/airflow-scheduler.pid
 
 
