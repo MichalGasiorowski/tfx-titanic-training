@@ -20,7 +20,9 @@ from tfx.orchestration import metadata
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-tests_path = os.getcwd()
+#tests_path = os.getcwd()
+
+tests_path = os.path.realpath(os.path.join(dir_path, '../'))
 local_data_dirpath = os.path.join(tests_path, '../', 'data')
 local_data_dirpath = os.path.normpath(local_data_dirpath)
 
@@ -83,10 +85,10 @@ class PipelineTest(tf.test.TestCase):
             self.assertTrue(os.path.exists(os.path.join(runner.LOCAL_PIPELINE_ROOT, comp)))
 
         self.assertNotEmpty(
-            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/train/data_tfrecord*.*'),
+            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/Split-train/data_tfrecord*.*'),
                       recursive=True))
         self.assertNotEmpty(
-            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/eval/data_tfrecord*.*'),
+            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/Split-eval/data_tfrecord*.*'),
                       recursive=True))
 
     def testLocalDagRunnerWithTuning(self):
@@ -103,10 +105,10 @@ class PipelineTest(tf.test.TestCase):
                             msg=f'{comp} component directory doesnt exist in PIPELINE_ROOT ( {runner.LOCAL_PIPELINE_ROOT} ) ')
 
         self.assertNotEmpty(
-            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/train/data_tfrecord*.*'),
+            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/Split-train/data_tfrecord*.*'),
                       recursive=True))
         self.assertNotEmpty(
-            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/eval/data_tfrecord*.*'),
+            glob.glob(os.path.join(runner.LOCAL_PIPELINE_ROOT, 'CsvExampleGen/**/Split-eval/data_tfrecord*.*'),
                       recursive=True))
 
     def testBeamDagRunnerWithoutTuning(self):
