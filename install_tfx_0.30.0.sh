@@ -22,6 +22,7 @@ pandas>1.2.4
 apache-beam[gcp]==2.28.0
 ml-metadata==0.29.0
 pyarrow==2.0.0
+numpy==1.19.5
 tensorflow==2.4.0
 tensorflow-data-validation==0.29.0
 tensorflow-metadata==0.29.0
