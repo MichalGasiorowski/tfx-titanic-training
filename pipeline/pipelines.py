@@ -226,7 +226,7 @@ def create_pipeline(pipeline_name: Text,
         'hyperparameters': hyperparameters,
         'custom_config': {'epochs': trainer_config.epochs, 'train_batch_size': trainer_config.train_batch_size,
                           'eval_batch_size': trainer_config.eval_batch_size,
-                          'train-steps-override': train_steps_runtime, 'eval-steps-override': eval_steps_runtime}
+                         }
     }
 
     if trainer_config.ai_platform_training_args is not None:
