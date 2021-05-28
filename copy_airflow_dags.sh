@@ -18,5 +18,6 @@ cp -R data $AIRFLOW_HOME/dags/
 cp -R pipeline/hyperparameters $AIRFLOW_HOME/dags/
 cp -R pipeline/schema $AIRFLOW_HOME/dags/
 cp -R pipeline/client $AIRFLOW_HOME/dags/
+cp -R pipeline/lib $AIRFLOW_HOME/dags/
 
 
