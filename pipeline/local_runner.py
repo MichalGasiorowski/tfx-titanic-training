@@ -118,6 +118,8 @@ class LocalRunnerWrapper():
                 tuner_config=self.tunerConfig,
                 pusher_config=self.pusherConfig,
                 runtime_parameters_config=None,
+                str_runtime_parameters_supported=False,
+                int_runtime_parameters_supported=False,
                 enable_cache=self.ENABLE_CACHE,
                 code_folder=self.code_folder,
                 local_run=True,

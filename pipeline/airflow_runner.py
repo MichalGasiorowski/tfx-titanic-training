@@ -38,6 +38,7 @@ from pipeline_args import RuntimeParametersConfig
 
 import pipelines as pipeline
 
+#import pydevd_pycharm
 
 # import features as features
 
@@ -114,13 +115,14 @@ class AirflowRunnerWrapper():
         data_root_runtime = data_types.RuntimeParameter(
             'data_root', ptype=str, default=self.DATA_ROOT_URI
         )
+
         train_steps_runtime = data_types.RuntimeParameter(
-            name='train-steps', ptype=int, default=int(self.trainerConfig.train_steps)
+            name='train-steps-override', ptype=str, default=str(self.trainerConfig.train_steps)
+            #name='train-steps', ptype=int, default=(str)(self.trainerConfig.train_steps)
         )
         eval_steps_runtime = data_types.RuntimeParameter(
-            name='eval-steps',
-            default=int(self.trainerConfig.eval_steps),
-            ptype=int
+            name='eval-steps-override', ptype=str, default=str(self.trainerConfig.eval_steps)
+            #name='eval-steps', ptype=str, default=(str)(self.trainerConfig.eval_steps)
         )
 
         self.runtime_parameters_config = RuntimeParametersConfig(data_root_runtime=data_root_runtime,
@@ -150,6 +152,8 @@ class AirflowRunnerWrapper():
             tuner_config=self.tunerConfig,
             pusher_config=self.pusherConfig,
             runtime_parameters_config=self.runtime_parameters_config,
+            str_runtime_parameters_supported=True,
+            int_runtime_parameters_supported=False,
             enable_cache=self.ENABLE_CACHE,
             code_folder=self.AIRFLOW_HOME_DAGS,
             local_run=True,
@@ -180,6 +184,8 @@ class AirflowRunnerWrapper():
 #    airflowRunnerWrapper.run()
 #    DAG = airflowRunnerWrapper.dag
 
+#to debug using Pycharm
+#pydevd_pycharm.settrace('localhost', port=9091, stdoutToServer=True, stderrToServer=True)
 
 airflowRunnerWrapper = AirflowRunnerWrapper()
 airflowRunnerWrapper.create_pipeline_root_folders_paths()

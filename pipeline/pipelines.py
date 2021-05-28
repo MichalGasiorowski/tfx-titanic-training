@@ -15,7 +15,7 @@
 
 from __future__ import absolute_import
 
-from typing import Any, Dict, List, Optional, Text
+from typing import List, Optional, Text
 
 import os
 import absl
@@ -36,8 +36,11 @@ from tfx.components import StatisticsGen
 from tfx.components import Trainer
 from tfx.components import Transform
 from tfx.components import Tuner
-from tfx.components.trainer import executor as trainer_executor
 from tfx.dsl.components.base import executor_spec
+
+from tfx.components.trainer import executor as trainer_executor
+from lib.executor import custom_trainer_executor as custom_trainer_executor
+
 
 from tfx.extensions.google_cloud_ai_platform.pusher import executor as ai_platform_pusher_executor
 from tfx.extensions.google_cloud_ai_platform.trainer import executor as ai_platform_trainer_executor
@@ -70,7 +73,8 @@ def create_pipeline(pipeline_name: Text,
                     tuner_config: TunerConfig,
                     pusher_config: PusherConfig,
                     runtime_parameters_config: RuntimeParametersConfig = None,
-                    runtime_parameters_supported = False,
+                    str_runtime_parameters_supported = False,
+                    int_runtime_parameters_supported = False,
                     local_run: bool = True,
                     beam_pipeline_args: Optional[List[Text]] = None,
                     enable_cache: Optional[bool] = True,
@@ -103,6 +107,7 @@ def create_pipeline(pipeline_name: Text,
   Returns:
     A TFX pipeline object.
   """
+    #pydevd_pycharm.settrace('localhost', port=9091, stdoutToServer=True, stderrToServer=True)
 
     absl.logging.info('pipeline_name: %s' % pipeline_name)
     absl.logging.info('pipeline root: %s' % pipeline_root)
@@ -134,10 +139,8 @@ def create_pipeline(pipeline_name: Text,
         ]))
 
     # examples = external_input(data_root_uri)
-
-    data_root_uri = runtime_parameters_config.data_root_runtime \
-        if runtime_parameters_config is not None \
-        else data_root_uri
+    if str_runtime_parameters_supported and runtime_parameters_config is not None:
+        data_root_uri = runtime_parameters_config.data_root_runtime
 
     examplegen = CsvExampleGen(input_base=data_root_uri, output_config=output_config)
 
@@ -174,12 +177,16 @@ def create_pipeline(pipeline_name: Text,
         source_uri=hyperparameters_proper_folder,
         artifact_type=HyperParameters).with_id('import_hparams')
 
-    train_steps = runtime_parameters_config.train_steps_runtime \
-        if runtime_parameters_config is not None \
-        else trainer_config.train_steps
-    eval_steps = runtime_parameters_config.eval_steps_runtime \
-        if runtime_parameters_config is not None \
-        else trainer_config.eval_steps
+    # apparently only str RuntimeParameters are supported in airflow :/
+    if int_runtime_parameters_supported and runtime_parameters_config is not None:
+        train_steps = runtime_parameters_config.train_steps_runtime
+        eval_steps = runtime_parameters_config.eval_steps_runtime
+    else:
+        train_steps = trainer_config.train_steps
+        eval_steps = trainer_config.eval_steps
+
+    absl.logging.info('train_steps: %s' % train_steps)
+    absl.logging.info('eval_steps: %s' % eval_steps)
 
     if tuner_config.enable_tuning:
         tuner_args = {
@@ -218,7 +225,8 @@ def create_pipeline(pipeline_name: Text,
         #'hyperparameters': tuner.outputs.best_hyperparameters if tunerConfig.enable_tuning else None,
         'hyperparameters': hyperparameters,
         'custom_config': {'epochs': trainer_config.epochs, 'train_batch_size': trainer_config.train_batch_size,
-                          'eval_batch_size': trainer_config.eval_batch_size}
+                          'eval_batch_size': trainer_config.eval_batch_size,
+                          'train-steps-override': train_steps_runtime, 'eval-steps-override': eval_steps_runtime}
     }
 
     if trainer_config.ai_platform_training_args is not None:
@@ -238,6 +246,7 @@ def create_pipeline(pipeline_name: Text,
         trainer_args.update({
             'custom_executor_spec':
                 executor_spec.ExecutorClassSpec(trainer_executor.GenericExecutor),
+                #executor_spec.ExecutorClassSpec(custom_trainer_executor.CustomGenericExecutor), # for debugging purposes
         })
 
     trainer = Trainer(**trainer_args)

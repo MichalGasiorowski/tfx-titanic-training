@@ -141,6 +141,8 @@ class KubeFlowRunner():
                 tuner_config=self.tuner_config,
                 pusher_config=self.pusher_config,
                 runtime_parameters_config=self.runtime_parameters_config,
+                str_runtime_parameters_supported=True,
+                int_runtime_parameters_supported=True,
                 enable_cache=self.ENABLE_CACHE,
                 local_run=False,
                 beam_pipeline_args=self.beam_pipeline_args
