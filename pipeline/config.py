@@ -56,6 +56,7 @@ class Config:
 
         self.LOCAL_LOG_DIR = os.getenv("LOCAL_LOG_DIR", '/tmp/logs')
 
+        self.CODE_FOLDER = os.getenv("CODE_FOLDER", os.path.dirname(__file__))
         self.HOME = os.getenv("HOME", os.path.expanduser("~"))
         self.LOCAL_ARTIFACT_STORE = os.path.join(os.sep, self.HOME, 'artifact-store')
         self.LOCAL_SERVING_MODEL_DIR = os.path.join(os.sep, self.HOME, 'serving_model')
