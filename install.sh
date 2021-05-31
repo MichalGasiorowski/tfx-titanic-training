@@ -35,7 +35,9 @@ tensorboard
 kfp==1.0.4
 EOF
 
-python -m pip install -U --user -r requirements.txt
+#python -m pip install -U --user -r requirements.txt
+python -m pip install -r requirements.txt
+
 
 # Install Skaffold
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
