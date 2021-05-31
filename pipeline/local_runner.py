@@ -76,7 +76,7 @@ class LocalRunnerWrapper():
 
         # properties applicable for local run
         self.HOME = self.env_config.HOME
-        self.code_folder = os.path.dirname(__file__)
+        self.code_folder = self.env_config.CODE_FOLDER
         self.LOCAL_ARTIFACT_STORE = self.env_config.LOCAL_ARTIFACT_STORE
         self.LOCAL_SERVING_MODEL_DIR = self.env_config.LOCAL_SERVING_MODEL_DIR
         self.LOCAL_PIPELINE_ROOT = self.env_config.LOCAL_PIPELINE_ROOT
