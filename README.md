@@ -5,6 +5,9 @@ taking "Titanic - Machine Learning from Disaster" kaggle competition.
 
 https://www.kaggle.com/c/titanic
 
+Obligatory Tensorflow Extended components pipeline image: 
+![alt text](https://raw.githubusercontent.com/tensorflow/tfx/master/docs/guide/images/prog_fin.png)
+
 This branch works on tfx 0.30.0 version.
 
 see:
