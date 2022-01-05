@@ -78,7 +78,7 @@ def create_pipeline(pipeline_name: Text,
                     local_run: bool = True,
                     beam_pipeline_args: Optional[List[Text]] = None,
                     enable_cache: Optional[bool] = True,
-                    code_folder = '.',
+                    code_folder = '',
                     metadata_connection_config: Optional[metadata_store_pb2.ConnectionConfig] = None
                     ) -> pipeline.Pipeline:
     """Trains and deploys the Keras Titanic Classifier with TFX and Kubeflow Pipeline on Google Cloud.

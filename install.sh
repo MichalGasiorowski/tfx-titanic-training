@@ -48,3 +48,29 @@ chmod +x skaffold
 mv skaffold $HOME/.local/bin
 
 jupyter nbextension enable --py tensorflow_model_analysis
+
+# kubectl
+
+curl -Lo $HOME/kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+curl -Lo $HOME/kubectl.sha256 "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+echo "$(<$HOME/kubectl.sha256) $HOME/kubectl" | sha256sum --check
+
+#chmod +x $HOME/kubectl
+#mv $HOME/kubectl $HOME/.local/bin
+
+#sudo install -o root -g root -m 0755 $HOME/kubectl /usr/local/bin/kubectl
+
+mkdir -p ~/.local/bin/kubectl
+mv ./kubectl ~/.local/bin/kubectl
+
+#Kind
+#https://kind.sigs.k8s.io/docs/user/quick-start/
+
+KIND_DIRECTORY=$HOME/.local/bin
+
+curl -Lo $HOME/kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+chmod +x $HOME/kind
+mv $HOME/kind $KIND_DIRECTORY/kind
+
+# https://www.kubeflow.org/docs/components/pipelines/installation/localcluster-deployment/#deploying-kubeflow-pipelinesARTIFACT_STORE_URI

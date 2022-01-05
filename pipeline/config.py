@@ -30,6 +30,7 @@ class Config:
         self.PROJECT_ID = os.getenv("PROJECT_ID", "cloud-training-281409")
         self.ARTIFACT_STORE_URI = os.getenv("ARTIFACT_STORE_URI",
                                             "gs://cloud-training-281409-kubeflowpipelines-default")
+
         self.CUSTOM_SERVICE_ACCOUNT = os.getenv("CUSTOM_SERVICE_ACCOUNT",
                                                 "tfx-tuner-service-account@cloud-training-281409.iam.gserviceaccount.com")
 
@@ -37,9 +38,9 @@ class Config:
         self.MODEL_NAME = os.getenv("MODEL_NAME", "tfx_titanic-classifier")
         self.DATA_ROOT_URI = os.getenv("DATA_ROOT_URI",
                                        "gs://cloud-training-281409-kubeflowpipelines-default/tfx-template/data/titanic")
-        self.TFX_IMAGE = os.getenv("KUBEFLOW_TFX_IMAGE", "tensorflow/tfx:0.25.0")
-        self.RUNTIME_VERSION = os.getenv("RUNTIME_VERSION", "2.3")
-        self.PYTHON_VERSION = os.getenv("PYTHON_VERSION", "3.7")
+        self.TFX_IMAGE = os.getenv("KUBEFLOW_TFX_IMAGE", "tensorflow/tfx:0.30.0")
+        self.RUNTIME_VERSION = os.getenv("RUNTIME_VERSION", "2.4")
+        self.PYTHON_VERSION = os.getenv("PYTHON_VERSION", "3.8")
         self.USE_KFP_SA = os.getenv("USE_KFP_SA", "False")
 
         self.ENABLE_TUNING = os.getenv("ENABLE_TUNING", "True")
@@ -48,6 +49,9 @@ class Config:
         self.MAX_TRIALS = os.getenv("MAX_TRIALS", "10")
 
         self.ENABLE_CACHE = os.getenv("ENABLE_CACHE", "False")
+        self.LOCAL_RUN = os.getenv("LOCAL_RUN", "True")
+
+
         self.TRAIN_STEPS = os.getenv("TRAIN_STEPS", "30000")
         self.EVAL_STEPS = os.getenv("EVAL_STEPS", "1000")
         self.EPOCHS = os.getenv("EPOCHS", "10")
@@ -62,6 +66,8 @@ class Config:
         self.LOCAL_SERVING_MODEL_DIR = os.path.join(os.sep, self.HOME, 'serving_model')
         self.LOCAL_PIPELINE_ROOT = os.path.join(self.LOCAL_ARTIFACT_STORE, self.PIPELINE_NAME, time.strftime("%Y%m%d_%H%M%S"))
         self.LOCAL_METADATA_PATH = os.path.join(self.LOCAL_PIPELINE_ROOT, 'tfx_metadata', 'metadata.db')
+
+        self.KUBEFLOW_ARTIFACT_STORE = os.path.join(os.sep, self.HOME, 'kubeflow-artifact-store')
 
         self.USE_GS = os.getenv("USE_GS", "False")
         self.USE_AI_PLATFORM = os.getenv("USE_AI_PLATFORM", "False")

@@ -63,6 +63,11 @@ class KubeFlowRunner():
                 '--region=' + self.env_config.GCP_REGION,
             ]
         else:
+            self.ARTIFACT_STORE_URI = self.env_config.KUBEFLOW_ARTIFACT_STORE
+            self.PIPELINE_ROOT = '{}/{}/{}'.format(
+                self.ARTIFACT_STORE_URI,
+                self.env_config.PIPELINE_NAME,
+                kfp.dsl.RUN_ID_PLACEHOLDER)
             self.beam_tmp_folder = '{}/beam/tmp'.format(self.env_config.LOCAL_ARTIFACT_STORE)
             self.beam_pipeline_args = [
                 '--runner=DirectRunner',
@@ -96,7 +101,8 @@ class KubeFlowRunner():
     def _setup_pipeline_parameters_from_env(self):
         self.LOCAL_LOG_DIR = self.env_config.LOCAL_LOG_DIR
         self.PIPELINE_NAME = self.env_config.PIPELINE_NAME
-        self.ENABLE_CACHE = self.env_config.ENABLE_CACHE
+        self.ENABLE_CACHE = strtobool(self.env_config.ENABLE_CACHE)
+        self.LOCAL_RUN = strtobool(self.env_config.LOCAL_RUN)
 
         self.TFX_IMAGE = self.env_config.TFX_IMAGE
         self.RUNTIME_VERSION = self.env_config.RUNTIME_VERSION
@@ -107,6 +113,7 @@ class KubeFlowRunner():
 
         # properties applicable for local run
         self.HOME = self.env_config.HOME
+        self.code_folder = self.env_config.CODE_FOLDER
         self.LOCAL_ARTIFACT_STORE = self.env_config.LOCAL_ARTIFACT_STORE
         self.LOCAL_SERVING_MODEL_DIR = self.env_config.LOCAL_SERVING_MODEL_DIR
         self.LOCAL_PIPELINE_ROOT = self.env_config.LOCAL_PIPELINE_ROOT
@@ -144,7 +151,8 @@ class KubeFlowRunner():
                 str_runtime_parameters_supported=True,
                 int_runtime_parameters_supported=True,
                 enable_cache=self.ENABLE_CACHE,
-                local_run=False,
+                code_folder=self.code_folder,
+                local_run=self.LOCAL_RUN,
                 beam_pipeline_args=self.beam_pipeline_args
                 ))
 
